@@ -1,20 +1,14 @@
 package main
 
 import (
-	"github.com/go-redis/redis"
+	"time"
+
 	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
-
-	iter := rdb.Scan(0, "hello*", 0).Iterator()
-	for iter.Next() {
-		logrus.New().Info("key: ", iter.Val())
-		// if err != nil { panic(err) }
-	}
+	curTime := time.Now()
+	fiveMonthLater := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day()+70, time.Now().Hour(), time.Now().Minute(), time.Now().Second(), 0, time.Local)
+	diff := fiveMonthLater.Sub(curTime).Hours()
+	logrus.Info("time diff: ", diff)
 }
