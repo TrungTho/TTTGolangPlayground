@@ -18,9 +18,10 @@ func Setup() {
 	atomicAPI := router.Group("/atomic")
 	{
 		atomicAPI.GET("/free-add", FreeAddValue)
+		atomicAPI.GET("/redis-lock-add", RedisLockAddValue)
+		atomicAPI.GET("/reset-value", ResetValue)
 		atomicAPI.GET("/value", GetFreeValue)
 	}
 
 	router.Run(":" + os.Getenv("PORT"))
-
 }
