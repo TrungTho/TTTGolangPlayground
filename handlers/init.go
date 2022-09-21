@@ -15,6 +15,12 @@ func Setup() {
 		ctx.JSON(http.StatusOK, "OK")
 	})
 
+	atomicAPI := router.Group("/atomic")
+	{
+		atomicAPI.GET("/free-add", FreeAddValue)
+		atomicAPI.GET("/value", GetFreeValue)
+	}
+
 	router.Run(":" + os.Getenv("PORT"))
 
 }

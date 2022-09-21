@@ -1,6 +1,10 @@
 package redis
 
 import (
+	"errors"
+	"playground/constants"
+	"time"
+
 	"github.com/go-redis/redis"
 	"github.com/sirupsen/logrus"
 )
@@ -26,5 +30,27 @@ func ClearCacheWithPrefix(prefix string) {
 			logrus.Errorf("error when delete key %s", iter.Val())
 			return
 		}
+	}
+}
+
+func LockWithKey(key string) error {
+	res := rdb.SetNX(key, 1, constants.RedisLockExpiredTime*time.Second)
+	lockSuccess, err := res.Result()
+
+	if err != nil || !lockSuccess {
+		return errors.New("can not get lock")
+	}
+
+	return nil
+}
+
+func ReleaseLockWithKey(key string) error {
+	res := rdb.Del(key)
+
+	unlockSuccess, err := res.Result()
+	if err == nil && unlockSuccess > 0 {
+		return nil
+	} else {
+		return errors.New("unlock failed")
 	}
 }
