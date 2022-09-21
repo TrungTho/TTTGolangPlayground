@@ -1,7 +1,7 @@
 package main
 
 import (
-	"playground/redis"
+	"playground/handlers"
 )
 
 type RewardServiceError struct {
@@ -10,5 +10,5 @@ type RewardServiceError struct {
 }
 
 func main() {
-	redis.ClearCacheWithPrefix("hello")
+	handlers.Setup()
 }
