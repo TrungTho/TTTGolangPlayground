@@ -7,10 +7,15 @@ const getValueUrl = "http://127.0.0.1:3000/atomic/value";
 const resetValueUrl = "http://127.0.0.1:3000/atomic/reset-value";
 
 export let options = {
-  duration: "2s",
-  preAllocatedVUs: 1000,
-  VUs: 100,
-  noVUConnectionReuse: true,
+  scenarios: {
+    constant_request_rate: {
+      executor: "constant-arrival-rate",
+      rate: 1000,
+      duration: "2s",
+      preAllocatedVUs: 1000,
+      maxVUs: 1000,
+    },
+  },
 };
 export function setup() {
   http.get(resetValueUrl);

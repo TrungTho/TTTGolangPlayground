@@ -1,11 +1,9 @@
 package handlers
 
 import (
-	"math/rand"
 	"net/http"
 	"playground/constants"
 	"playground/redis"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,32 +16,27 @@ var (
 const Limit = 100
 
 func FreeAddValue(c *gin.Context) {
-	if freeValue+1 <= Limit {
-		time.Sleep(time.Millisecond * time.Duration(1000*rand.Float64()))
-		freeValue++
-		c.String(http.StatusOK, "OK")
-		return
+	freeValue++
+	if freeValue > Limit {
+		freeValue--
 	}
 
-	c.AbortWithStatus(http.StatusOK)
+	c.Status(http.StatusOK)
 }
 
 func RedisLockAddValue(c *gin.Context) {
 	if err := redis.LockWithKey(constants.KeyAtomicAddValue); err != nil {
-		c.AbortWithStatus(http.StatusOK)
+		c.AbortWithStatus(http.StatusConflict)
 		return
 	}
 
-	if freeValue+1 <= Limit {
-		time.Sleep(time.Millisecond * time.Duration(1000*rand.Float64()))
-		freeValue++
-		c.String(http.StatusOK, "OK")
-		redis.ReleaseLockWithKey(constants.KeyAtomicAddValue)
-		return
+	redisLockValue++
+	if redisLockValue > Limit {
+		redisLockValue--
 	}
 
 	redis.ReleaseLockWithKey(constants.KeyAtomicAddValue)
-	c.AbortWithStatus(http.StatusOK)
+	c.Status(http.StatusOK)
 }
 
 func ResetValue(c *gin.Context) {

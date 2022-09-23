@@ -7,11 +7,17 @@ const getValueUrl = "http://127.0.0.1:3000/atomic/value";
 const resetValueUrl = "http://127.0.0.1:3000/atomic/reset-value";
 
 export let options = {
-  duration: "20s",
-  preAllocatedVUs: 1000,
-  VUs: 100,
-  noVUConnectionReuse: true,
+  scenarios: {
+    constant_request_rate: {
+      executor: "constant-arrival-rate",
+      rate: 1000,
+      duration: "20s",
+      preAllocatedVUs: 1000,
+      maxVUs: 1000,
+    },
+  },
 };
+
 export function setup() {
   http.get(resetValueUrl);
 
@@ -28,6 +34,6 @@ export default function () {
 export function teardown(data) {
   let res = http.get(getValueUrl);
   let body = JSON.parse(res.body);
-  console.log("value of redis_lock_value: ", body.free_value);
+  console.log("value of redis_lock_value: ", body.redis_lock_value);
   check(body, { "check result ": (r) => r.redis_lock_value == 100 });
 }
