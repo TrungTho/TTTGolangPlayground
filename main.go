@@ -10,6 +10,7 @@ import (
 	"io"
 
 	"github.com/mergermarket/go-pkcs7"
+	openssl "github.com/Luzifer/go-openssl/v4"
 )
 
 type RewardServiceError struct {
@@ -24,13 +25,13 @@ type Resp struct {
 
 func main() {
 
-	data := Resp{UserId: 1, UserName: "User2"}
+	data := Resp{UserId: 1, UserName: "golang"}
 	text, _ := json.Marshal(data)
 
 	fmt.Println("data to encrypt: ", string(text))
 	e, _ := Encrypt(string(text), secretKey)
 	fmt.Println("encrypted:", e)
-	d, _ := Decrypt("f7aa599aebc8939c092b8ea6392e2e184baf2245bdd77b800c7d0b179d72955a62323d72d3a1228c45caa932a2f2d254e44b8a16f7572a7221506e27b53edf56", secretKey)
+	d, _ := Decrypt("U2FsdGVkX18UFhbCo6OQBy6mOvJpd9q1YFKTsFWWrIO1YXbmjAv4s1e98voS/9Kfy796/4+NGERc54QDIjd6jA==", secretKey)
 	fmt.Println("decrypted: ", d)
 }
 
@@ -38,9 +39,18 @@ const secretKey = "Sqrb[1R.1#.a~Kl5sdTM|6Z'65zhBi}~"
 
 // Encrypt encrypts plain text string into cipher text string
 func Encrypt(data string, secretKey string) (string, error) {
+	o := openssl.New()
+
+	enc, err := o.EncryptBytes(secretKey,[]byte(data),openssl.BytesToKeyMD5)
+	if err != nil {
+	  return "",err
+	}
+  
+return string(enc),nil
+
 	key := []byte(secretKey)
 	plainText := []byte(data)
-	plainText, err := pkcs7.Pad(plainText, aes.BlockSize)
+	plainText, err = pkcs7.Pad(plainText, aes.BlockSize)
 	if err != nil {
 		return "", fmt.Errorf(`plainText: "%s" has error`, plainText)
 	}
@@ -68,6 +78,15 @@ func Encrypt(data string, secretKey string) (string, error) {
 
 // Decrypt decrypts cipher text string into plain text string
 func Decrypt(encrypted string, secretKey string) (string, error) {
+	o := openssl.New()
+
+	dec, err := o.DecryptBytes(secretKey, []byte(encrypted), openssl.BytesToKeyMD5)
+	if err != nil {
+		return "",err
+	}
+ 
+	return string(dec),nil
+
 	key := []byte(secretKey)
 	cipherText, _ := hex.DecodeString(encrypted)
 
