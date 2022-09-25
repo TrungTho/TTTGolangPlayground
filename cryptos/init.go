@@ -2,39 +2,65 @@ package cryptos
 
 import (
 	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"io"
 
-	"github.com/sirupsen/logrus"
+	"github.com/mergermarket/go-pkcs7"
 )
 
-func EncryptAES(key []byte, plaintext string) string {
-	// create cipher
-	c, err := aes.NewCipher(key)
+func EncryptAES(data string, secretKey string) (string, error) {
+	key := []byte(secretKey)
+	plainText := []byte(data)
+	plainText, err := pkcs7.Pad(plainText, aes.BlockSize)
 	if err != nil {
-		logrus.WithError(err).Error("error when create new cipher")
+		return "", fmt.Errorf(`plainText: "%s" has error`, plainText)
+	}
+	if len(plainText)%aes.BlockSize != 0 {
+		err := fmt.Errorf(`plainText: "%s" has the wrong block size`, plainText)
+		return "", err
 	}
 
-	// allocate space for ciphered data
-	out := make([]byte, len(plaintext))
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
 
-	// encrypt
-	c.Encrypt(out, []byte(plaintext))
-	// return hex string
-	return hex.EncodeToString(out)
+	cipherText := make([]byte, aes.BlockSize+len(plainText))
+	iv := cipherText[:aes.BlockSize]
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		return "", err
+	}
+
+	mode := cipher.NewCBCEncrypter(block, iv)
+	mode.CryptBlocks(cipherText[aes.BlockSize:], plainText)
+
+	return fmt.Sprintf("%x", cipherText), nil
 }
 
-func DecryptAES(key []byte, ct string) {
-	ciphertext, _ := hex.DecodeString(ct)
+func DecryptAES(encrypted string, secretKey string) (string, error) {
+	key := []byte(secretKey)
+	cipherText, _ := hex.DecodeString(encrypted)
 
-	c, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(key)
 	if err != nil {
-		logrus.WithError(err).Error("error when create new cipher")
+		panic(err)
 	}
 
-	pt := make([]byte, len(ciphertext))
-	c.Decrypt(pt, ciphertext)
+	if len(cipherText) < aes.BlockSize {
+		panic("cipherText too short")
+	}
+	iv := cipherText[:aes.BlockSize]
+	cipherText = cipherText[aes.BlockSize:]
+	if len(cipherText)%aes.BlockSize != 0 {
+		panic("cipherText is not a multiple of the block size")
+	}
 
-	s := string(pt[:])
-	fmt.Println("DECRYPTED:", s)
+	mode := cipher.NewCBCDecrypter(block, iv)
+	mode.CryptBlocks(cipherText, cipherText)
+
+	cipherText, _ = pkcs7.Unpad(cipherText, aes.BlockSize)
+	return fmt.Sprintf("%s", cipherText), nil
 }
