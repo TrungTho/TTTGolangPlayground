@@ -54,3 +54,7 @@ func ReleaseLockWithKey(key string) error {
 		return errors.New("unlock failed")
 	}
 }
+
+func GetRedis () *redis.Client{
+	return rdb
+}
